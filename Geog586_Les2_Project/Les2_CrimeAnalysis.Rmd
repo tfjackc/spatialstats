@@ -1,0 +1,232 @@
+---
+title: "St. Louis Crime Analysis"
+author: "Jack Colpitt"
+date: "11/10/2023"
+output:
+    rmdformats::readthedown:
+    self_contained: true
+    thumbnails: true
+    lightbox: true
+    gallery: true
+    highlight: tango
+---
+```{css, echo=FALSE}
+
+
+h1 {
+  color: black !important;
+}
+
+h2 {
+  color: black !important;
+  <!-- background-color:#ffeec5; -->
+  <!-- padding: 5px; -->
+  <!-- border-radius: 10px; -->
+  <!-- border: 1px solid black; -->
+}
+
+#sidebar {
+  background-color: black;
+}
+
+#sidebar h2 {
+  background-color:#ffeec5;
+  border-radius: 0px;
+  border: 0px;
+}
+
+#sidebar h2 a {
+  color:black;
+}
+
+#toc {
+  background-color:black;
+}
+
+#postamble {
+  border-top: black;
+}
+```
+
+
+We will be analyzing a variety of recorded criminal activity in the St. Louis area. Particularly focusing on arson, DUIs, and homicides. Using a variety of statistical and mapping techniques we can answer questions, such as, "where did these crimes take place?", "How often are they happening?", and "What are the trends in related activity? Increasing or decreasing?".
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Required R Packages
+
+```{r echo=TRUE, message = FALSE}
+#install and load packages here
+library(ggplot2)
+library(maptools)
+library (spatstat)
+library(leaflet)
+library (dplyr)
+library(doBy)
+library(rgdal)
+library (ggmap)
+library(gridExtra)
+library(sp)
+library (RColorBrewer)
+library(DT)
+```
+
+## Data Source
+
+```{r, echo=TRUE}
+# set working directories
+file_dir_crime <- "crime/"
+
+# set other directories
+file_dir_gis <- "gis/"
+
+#read in crime file
+#concatenate the filedircrime (set earlier to your directory) with the filename using paste()
+crime_file <- paste(file_dir_crime,"crimeStLouis20132014b.csv", sep = "")
+
+# read data into csv 
+crimesstl <- read.csv(crime_file, header=TRUE,sep=",")
+ 
+#create a list of the unique crime types in the data set and view what these are so that you can select using these so that you can explore their distributions.
+listcrimetype <-unique(crimesstl$crimetype)
+
+#returns a datatable of the loaded csv
+sub_crime <- select(crimesstl, crimetype, year, month, district, xL, yL) %>%
+        rename("lat" = "xL",
+               "long" = "yL",
+               )
+datatable(sub_crime, width = "auto")
+```
+
+**Table 1-1.** By using the DT library, we can utilize the functionality of a DataTable to easily filter and search for data we are interested in. This allows for exploratory analysis within the notebook environment.
+
+```{r echo=TRUE}
+countsmonth <- table(crimesstl$month)
+barplot(countsmonth, col='grey', main='Number of Crimes by Month', xlab='Month', ylab='Number of Crimes')
+```
+
+```{r echo=TRUE}
+countsyr <- table(crimesstl$year)
+barplot(countsyr, col="darkcyan", main="Number of Crimes by Year",xlab="Year",ylab="Number of Crimes") 
+```
+
+```{r echo=TRUE}
+#Barchart of crimes by crimetype
+counts <- table(crimesstl$crimetype)
+barplot(counts, col = "cornflowerblue", main = "Number of Crimes by Crime Type", xlab="Crime Type", ylab="Number of Crimes")
+```
+
+```{r echo=TRUE}
+#BoxPlots are useful for comparing data. 
+#Use the dataset crimeStLouis20132014b_agg.csv.  
+#These data are aggregated by neighbourhood.  
+agg_crime_file <-paste(file_dir_crime,"crimeStLouis20132014b_agg.csv", sep = "")
+#check everything worked ok with accessing the file
+#file.exists(agg_crime_file)
+crimesstlagg <- read.csv(agg_crime_file, header=TRUE,sep=",")
+ 
+#Compare crimetypes
+boxplot(count~crimetype, data=crimesstlagg,main="Boxplots According to Crime Type",
+            xlab="Crime Type", ylab="Number of Crimes",
+            col="cornsilk", border="brown", pch=19)
+```
+
+```{r echo=TRUE, message=FALSE, warning = FALSE}
+#Create an interactive map that plots the crime points on a background map.
+ 
+#This will create a map with all of the points
+gis_file <- paste(file_dir_gis,"stl_boundary_ll.shp", sep="")
+file.exists(gis_file)
+ 
+#Read the St Louis Boundary Shapefile
+StLouisBND <- readOGR(gis_file, layer = "stl_boundary_ll", GDAL1_integer64_policy = FALSE)
+ 
+leaflet(crimesstl) %>%
+  addTiles() %>%
+  addPolygons(data=StLouisBND, color = "#444444", weight = 3, smoothFactor = 0.5,
+                  opacity = 1.0, fillOpacity = 0.5, fill= FALSE,
+                  highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = TRUE)) %>%
+  addCircles(lng = ~xL, lat = ~yL, weight = 7, radius = 5, 
+    popup = paste0("Crime type: ", as.character(crimesstl$crimetype), 
+                              "; Month: ", as.character(crimesstl$month)))
+```
+
+```{r, echo = FALSE,fig.width = 10, fig.height=10}
+stLbnd_df <- fortify(StLouisBND)
+
+g1<-ggplot() +
+      geom_polygon(data=stLbnd_df, aes(x=long, y=lat,group=group),color='black',linewidth = .2, fill=NA) +
+      geom_point(data = crimesstl, aes(x = xL, y = yL),color = "black", size = 1) + ggtitle("All Crimes") +
+      coord_fixed(1.3)+
+  theme(panel.grid = element_blank())
+
+g2<-ggplot() +
+      geom_polygon(data=stLbnd_df, aes(x=long, y=lat,group=group),color='black',linewidth = .2, fill=NA) +
+      geom_point(data = crimesstl, aes(x = xL, y = yL),color = "black", size = 1) + ggtitle("Crime Categories") +
+      coord_fixed(1.3) +
+  facet_wrap(~ crimetype)+
+  theme(panel.grid = element_blank(),
+        strip.text = element_text(size = 12)
+        )
+
+grid.arrange(g1, g2)
+```
+
+```{r}
+crimess22 <- subset(crimesstl, crimetype == "arson")
+crimess33 <- subset(crimesstl, crimetype == "dui")
+crimess44 <- subset(crimesstl, crimetype == "homicide")
+#Create an interactive map for each crimetype
+#To view a particular crime you will want to create a map using a subset of the data.
+#Or use leaflet and include a background map to put the crime in context.
+ 
+leaflet(crimesstl) %>%
+  addTiles() %>%
+  addPolygons(data=StLouisBND, 
+              color = "#444444", 
+              weight = 3, 
+              smoothFactor = 0.5,
+              opacity = 1.0, 
+              fillOpacity = 0.5, 
+              fill= FALSE,
+              highlightOptions = highlightOptions(color = "white", weight = 2,
+                                                      bringToFront = TRUE),
+              group='St. Louis') %>%
+   
+  addCircles(data = crimess22, 
+             lng = crimess22$xL, 
+             lat = crimess22$yL, 
+             weight = 5, 
+             radius = 10,
+             group = "Arson",
+    popup = paste0("Crime type: ", as.character(crimess22$crimetype), 
+                              "; Month: ", as.character(crimess22$month)))  %>%
+ 
+ 
+#Turn these on when you are ready to view them. To do so remove the # and switch off the addCircles above by adding a #
+  addCircles(data = crimess33, 
+             lng = crimess33$xL, 
+             lat = crimess33$yL, 
+             weight = 5, 
+             radius = 10,
+             group = 'DUI',
+      popup = paste0("Crime type: ", as.character(crimess33$crimetype), 
+                                "; Month: ", as.character(crimess33$month)))  %>%
+   
+  addCircles(data = crimess44, 
+             lng = crimess44$xL, 
+             lat = crimess44$yL, 
+             weight = 5, 
+             radius = 10,
+             group = 'Homicide',
+      popup = paste0("Crime type: ", as.character(crimess44$crimetype), 
+                                "; Month: ", as.character(crimess44$month)))  %>%
+
+  addLayersControl(
+          overlayGroups =c('St. Louis', 'Arson', 'DUI', 'Homicide'),
+          options = layersControlOptions(collapsed=FALSE)
+          )
+```
