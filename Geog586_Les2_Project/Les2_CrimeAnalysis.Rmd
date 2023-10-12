@@ -261,12 +261,19 @@ Spatial dependent patterns for arson and homicide might lead us to hypothesize a
 Boxplots are informative diagrams that allow us to see the quartile ranges (Q1, Q2 - Median, and Q3), the low and high end the range, and outliers in the data. IQR is determined by Q3 - Q1, and values that exist below Q1 − 1.5(IQR) as well as values above Q3 + 1.5(IQR) are deemed as outliers. 
 
 ```{r echo=TRUE}
-rng <- quantile(crimesstlagg$count, probs = c(0,0.25,0.5,0.75,1)) 
-iqr <- IQR(crimesstlagg$count)
-out <- boxplot.stats(crimesstlagg$count)$out
-out_ind <- which(crimesstlagg$count %in% c(out))
-summary(crimesstlagg$count)
-out
+#Summarise data
+summary(crimesstl)
+ 
+#Make a data frame (a data structure) with crimes by crime type
+dt <- data.frame(cnt=crimesstl$count, group=crimesstl$crimetype)
+#save these grouped data to a variable so you can use it other commands
+grp <- group_by(dt, group)
+ 
+#Summarise data from library (dplyr)
+#Summarise the number of counts for each group
+summarise(grp, sum=sum(cnt))
+#transpose the table
+tapply(crimesstl$count, crimesstl$crimetype,sum)
 ```
 
 ```{r echo=TRUE}
