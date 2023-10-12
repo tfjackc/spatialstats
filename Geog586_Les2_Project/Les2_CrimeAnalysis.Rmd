@@ -4,12 +4,15 @@ author: "Jack Colpitt"
 date: "11/10/2023"
 output:
     rmdformats::readthedown:
-    self_contained: true
-    thumbnails: true
-    lightbox: true
-    gallery: true
-    highlight: tango
+      self_contained: true
+      thumbnails: false
+      lightbox: true
+      gallery: true
+      highlight: tango
+      always_allow_html: yes
+      code_folding: hide
 ---
+
 ```{css, echo=FALSE}
 
 
@@ -48,8 +51,11 @@ h2 {
 }
 ```
 
+## Introduction
 
-We will be analyzing a variety of recorded criminal activity in the St. Louis area. Particularly focusing on arson, DUIs, and homicides. Using a variety of statistical and mapping techniques we can answer questions, such as, "where did these crimes take place?", "How often are they happening?", and "What are the trends in related activity? Increasing or decreasing?".
+We will be analyzing a variety of recorded criminal activity in the St. Louis area. Particularly focusing on arson, DUIs, and homicides. Using a variety of statistical and mapping techniques we can answer questions, such as, "where did these crimes take place?" (Figure X.), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1).
+
+"be sure to include information on descriptive statistics and link it to the crime data you are using - include references"
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -57,7 +63,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Required R Packages
 
-```{r echo=TRUE, message = FALSE}
+The code cell below indicates the R packages used in the analysis.
+
+```{r echo=TRUE, message = FALSE, class.source = 'fold-show'}
 #install and load packages here
 library(ggplot2)
 library(maptools)
@@ -73,8 +81,13 @@ library (RColorBrewer)
 library(DT)
 ```
 
-## Data Source
+## Methods
 
+In our analysis we are leveraging statistics and visualization with the R programming language to gain an understanding of our chosen data set. The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2. Figure 3 separates the data based on type, month, and year.
+
+the sample mean of crime observations (Figure 2), and the interquartile range (Figure X). We can visualize the types of crime, how many times they've been observed, and what month, as well as pinpoints outliers in the data set that could potentially be skewing the data. 
+
+## DataTable
 ```{r, echo=TRUE}
 # set working directories
 file_dir_crime <- "crime/"
@@ -85,97 +98,98 @@ file_dir_gis <- "gis/"
 #read in crime file
 #concatenate the filedircrime (set earlier to your directory) with the filename using paste()
 crime_file <- paste(file_dir_crime,"crimeStLouis20132014b.csv", sep = "")
+crime_file_agg <- paste(file_dir_crime,"crimeStLouis20132014b_agg.csv", sep = "")
 
 # read data into csv 
 crimesstl <- read.csv(crime_file, header=TRUE,sep=",")
+crimesstl_agg <- read.csv(crime_file_agg, header=TRUE,sep=",") 
  
 #create a list of the unique crime types in the data set and view what these are so that you can select using these so that you can explore their distributions.
 listcrimetype <-unique(crimesstl$crimetype)
 
 #returns a datatable of the loaded csv
-sub_crime <- select(crimesstl, crimetype, year, month, district, xL, yL) %>%
-        rename("lat" = "xL",
-               "long" = "yL",
-               )
-datatable(sub_crime, width = "auto")
-```
+sub_crime_agg <- crimesstl_agg %>%
+  select(count, crimetype, month)
 
-**Table 1-1.** By using the DT library, we can utilize the functionality of a DataTable to easily filter and search for data we are interested in. This allows for exploratory analysis within the notebook environment.
-
-```{r echo=TRUE}
-countsmonth <- table(crimesstl$month)
-barplot(countsmonth, col='grey', main='Number of Crimes by Month', xlab='Month', ylab='Number of Crimes')
+datatable(sub_crime_agg, width = "auto")
 ```
+**Table 1.** By utilizing the datatable we can order count rate in a descending order and see that DUIs in May have the highest hit rate for a single crime type based on monthly intervals.
 
-```{r echo=TRUE}
-countsyr <- table(crimesstl$year)
-barplot(countsyr, col="darkcyan", main="Number of Crimes by Year",xlab="Year",ylab="Number of Crimes") 
-```
+## What type of crimes occur more than others?
+
+By summing the count column based on the type of crime we can visualize that arson occurs the most in comparison to DUIs and homicides. 
 
 ```{r echo=TRUE}
 #Barchart of crimes by crimetype
 counts <- table(crimesstl$crimetype)
 barplot(counts, col = "cornflowerblue", main = "Number of Crimes by Crime Type", xlab="Crime Type", ylab="Number of Crimes")
 ```
+**Figure 1.** Arson is the most common crime compared to the other attributes.
+
+## Temporal patterns associated with each crime 
+
+Now let's dive deeper into the data, and start to visualize information based on when it took place. 
 
 ```{r echo=TRUE}
-#BoxPlots are useful for comparing data. 
-#Use the dataset crimeStLouis20132014b_agg.csv.  
-#These data are aggregated by neighbourhood.  
-agg_crime_file <-paste(file_dir_crime,"crimeStLouis20132014b_agg.csv", sep = "")
-#check everything worked ok with accessing the file
-#file.exists(agg_crime_file)
-crimesstlagg <- read.csv(agg_crime_file, header=TRUE,sep=",")
- 
-#Compare crimetypes
-boxplot(count~crimetype, data=crimesstlagg,main="Boxplots According to Crime Type",
-            xlab="Crime Type", ylab="Number of Crimes",
-            col="cornsilk", border="brown", pch=19)
+#Histograms of crimes by observations per month
+data <- c(table(crimesstl$month))
+mean <- summarise(data)
+
+ggplot(crimesstl, aes(x = month)) + 
+  geom_histogram(binwidth = 1, fill = "grey", color = "black") +
+  geom_density(aes(y = after_stat(count)), color = "red", size = 1) +
+  labs(title = "Histogram of Crimes by Month with Density Curve",
+       x = "Month",
+       y = "Frequency") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  scale_x_continuous(breaks = 2:12)
 ```
+**Figure 2.** Most crimes took place in the month of August.
+
+Utilizing a facet wrapped plot based on crime type we can see when each observation happens the most based on the month and also compare the years 2013 and 2014.
+
+```{r echo=TRUE}
+crimess2013 <- subset(crimesstl, year == "2013")
+crimess2014 <- subset(crimesstl, year == "2014")
+
+counts_2013 <- table(crimess2013$month, crimess2013$crimetype)
+counts_df_2013 <- as.data.frame(counts_2013)
+colnames(counts_df_2013) <- c("Month", "CrimeType", "Count")
+
+# Create the faceted barplot
+plot_2013 <- ggplot(counts_df_2013, aes(x = Month, y = Count, fill = CrimeType)) +
+              geom_bar(stat = "identity", show.legend = FALSE) +
+              labs(title = "2013",
+                   x = "Month",
+                   y = "Number of Crimes") +
+              scale_fill_brewer(palette = "Set1") +  # You can change the palette if needed
+              facet_wrap(~ CrimeType, scales = "free_x", ncol = 1)
+
+counts_2014 <- table(crimess2014$month, crimess2014$crimetype)
+counts_df_2014 <- as.data.frame(counts_2014)
+colnames(counts_df_2014) <- c("Month", "CrimeType", "Count")
+
+# Create the faceted barplot
+plot_2014 <- ggplot(counts_df_2014, aes(x = Month, y = Count, fill = CrimeType)) +
+              geom_bar(stat = "identity") +
+              labs(title = "2014",
+                   x = "Month",
+                   y = "Number of Crimes") +
+              scale_fill_brewer(palette = "Set1") +  # You can change the palette if needed
+              facet_wrap(~ CrimeType, scales = "free_x", ncol = 1)
+
+grid.arrange(plot_2013, plot_2014, nrow=1,ncol=2, widths = c(.75, 1))
+```
+**Figure 3.** Arson levels are heightened in August of 2013 and DUIs are hightened in April of 2014. The ggplot library and the facet_wrap() function was used to seperate the variables and visualize the information side by side. 
+
+## Where did the crimes take place?
 
 ```{r echo=TRUE, message=FALSE, warning = FALSE}
-#Create an interactive map that plots the crime points on a background map.
- 
 #This will create a map with all of the points
 gis_file <- paste(file_dir_gis,"stl_boundary_ll.shp", sep="")
-file.exists(gis_file)
- 
 #Read the St Louis Boundary Shapefile
 StLouisBND <- readOGR(gis_file, layer = "stl_boundary_ll", GDAL1_integer64_policy = FALSE)
- 
-leaflet(crimesstl) %>%
-  addTiles() %>%
-  addPolygons(data=StLouisBND, color = "#444444", weight = 3, smoothFactor = 0.5,
-                  opacity = 1.0, fillOpacity = 0.5, fill= FALSE,
-                  highlightOptions = highlightOptions(color = "white", weight = 2,
-                                                      bringToFront = TRUE)) %>%
-  addCircles(lng = ~xL, lat = ~yL, weight = 7, radius = 5, 
-    popup = paste0("Crime type: ", as.character(crimesstl$crimetype), 
-                              "; Month: ", as.character(crimesstl$month)))
-```
 
-```{r, echo = FALSE,fig.width = 10, fig.height=10}
-stLbnd_df <- fortify(StLouisBND)
-
-g1<-ggplot() +
-      geom_polygon(data=stLbnd_df, aes(x=long, y=lat,group=group),color='black',linewidth = .2, fill=NA) +
-      geom_point(data = crimesstl, aes(x = xL, y = yL),color = "black", size = 1) + ggtitle("All Crimes") +
-      coord_fixed(1.3)+
-  theme(panel.grid = element_blank())
-
-g2<-ggplot() +
-      geom_polygon(data=stLbnd_df, aes(x=long, y=lat,group=group),color='black',linewidth = .2, fill=NA) +
-      geom_point(data = crimesstl, aes(x = xL, y = yL),color = "black", size = 1) + ggtitle("Crime Categories") +
-      coord_fixed(1.3) +
-  facet_wrap(~ crimetype)+
-  theme(panel.grid = element_blank(),
-        strip.text = element_text(size = 12)
-        )
-
-grid.arrange(g1, g2)
-```
-
-```{r}
 crimess22 <- subset(crimesstl, crimetype == "arson")
 crimess33 <- subset(crimesstl, crimetype == "dui")
 crimess44 <- subset(crimesstl, crimetype == "homicide")
@@ -229,4 +243,49 @@ leaflet(crimesstl) %>%
           overlayGroups =c('St. Louis', 'Arson', 'DUI', 'Homicide'),
           options = layersControlOptions(collapsed=FALSE)
           )
+```
+
+## Descriptive Statistics 2.12
+
+```{r echo=TRUE}
+#BoxPlots are useful for comparing data. 
+#Use the dataset crimeStLouis20132014b_agg.csv.  
+#These data are aggregated by neighbourhood.  
+agg_crime_file <-paste(file_dir_crime,"crimeStLouis20132014b_agg.csv", sep = "")
+#check everything worked ok with accessing the file
+#file.exists(agg_crime_file)
+crimesstlagg <- read.csv(agg_crime_file, header=TRUE,sep=",")
+ 
+#Compare crimetypes
+boxplot(count~crimetype, data=crimesstlagg,main="Boxplots According to Crime Type",
+            xlab="Crime Type", ylab="Number of Crimes",
+            col="cornsilk", border="brown", pch=19)
+```
+
+
+
+```{r, echo = FALSE,fig.width = 10, fig.height=10}
+stLbnd_df <- fortify(StLouisBND)
+
+g1<-ggplot() +
+      geom_polygon(data=stLbnd_df, aes(x=long, y=lat,group=group),color='black',linewidth = .2, fill=NA) +
+      geom_point(data = crimesstl, aes(x = xL, y = yL),color = "black", size = 1) + ggtitle("All Crimes") +
+      coord_fixed(1.3)+
+  theme(panel.grid = element_blank())
+
+g2<-ggplot() +
+      geom_polygon(data=stLbnd_df, aes(x=long, y=lat,group=group),color='black',linewidth = .2, fill=NA) +
+      geom_point(data = crimesstl, aes(x = xL, y = yL),color = "black", size = 1) + ggtitle("Crime Categories") +
+      coord_fixed(1.3) +
+  facet_wrap(~ crimetype)+
+  theme(panel.grid = element_blank(),
+        strip.text = element_text(size = 12)
+        )
+
+grid.arrange(g1, g2)
+```
+
+
+```{r}
+summary(crimesstlagg)
 ```
