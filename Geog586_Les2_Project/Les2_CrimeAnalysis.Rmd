@@ -67,23 +67,21 @@ The code cell below indicates the R packages used in the analysis.
 #install and load packages here
 library(ggplot2)
 library(maptools)
-library (spatstat)
+library(spatstat)
 library(leaflet)
-library (dplyr)
+library(dplyr)
 library(doBy)
 library(rgdal)
-library (ggmap)
+library(ggmap)
 library(gridExtra)
 library(sp)
-library (RColorBrewer)
+library(RColorBrewer)
 library(DT)
 ```
 
 ## Methods
 
-In our analysis we are leveraging statistics and visualization with the R programming language to gain an understanding of our chosen data set. The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2. Figure 3 separates the data based on type, month, and year. A spatial display using R Leaflet is in Figure 4 where clustering of crime types are present. Lastly, descriptive statistics are used for finding the mean, median, mode, standard deviation, and outliers. 
-
-the sample mean of crime observations (Figure 2), and the interquartile range (Figure X). We can visualize the types of crime, how many times they've been observed, and what month, as well as pinpoints outliers in the data set that could potentially be skewing the data. 
+    In our analysis we are leveraging statistics and visualization with the R programming language to gain an understanding of our chosen data set. The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2. Figure 3 separates the data based on type, month, and year. A spatial display using R Leaflet is in Figure 4 where a possible hypothesis of clustering of crime types could be present. Lastly, descriptive statistics are used for finding the mean, median, mode, standard deviation, and outliers are calculated using descriptive statistics in Figure X-X. 
 
 ## DataTable
 ```{r, echo=TRUE}
@@ -115,14 +113,14 @@ datatable(sub_crime_agg, width = "auto")
 
 ## What type of crimes occur more than others?
 
-By summing the count column based on the type of crime we can visualize that arson occurs the most in comparison to DUIs and homicides. 
+By summing the count column based on the type of crime we can visualize that arson occurs the most in comparison to DUIs and homicides. Figure 1 represents this calculation with a bar chart.
 
 ```{r echo=TRUE}
 #Barchart of crimes by crimetype
 counts <- table(crimesstl$crimetype)
 barplot(counts, col = "cornflowerblue", main = "Number of Crimes by Crime Type", xlab="Crime Type", ylab="Number of Crimes")
 ```
-**Figure 1.** Arson is the most common crime compared to the other attributes.
+**Figure 1.** In combined years 2013 and 2014 Arson is the most common crime followed by DUI, and homicide.
 
 ## Temporal patterns associated with each crime 
 
