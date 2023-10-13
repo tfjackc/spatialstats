@@ -50,14 +50,13 @@ h2 {
   border-top: black;
 }
 ```
-
-## Introduction
-
-We will be analyzing a variety of recorded criminal activity in the St. Louis area. Particularly focusing on arson, DUIs, and homicides. Using a variety of statistical and mapping techniques we can answer questions, such as, "where did these crimes take place?" (Figure X.), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1).
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+## Introduction
+
+We will be performing exploratory data analysis for three types of recorded criminal activity in the St. Louis area. The study focuses on arson, DUIs, and homicides. The purpose of this study is to answer questions about that data and gain familiarity for continuing analysis. Our methods in the analysis will use descriptive statistical techniques to answer questions, such as, "where did these crimes take place?" (Figure 4), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1).
 
 ## Required R Packages
 
@@ -81,7 +80,7 @@ library(DT)
 
 ## Methods
 
-    In our analysis we are leveraging statistics and visualization with the R programming language to gain an understanding of our chosen data set. The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2. Figure 3 separates the data based on type, month, and year. A spatial display using R Leaflet is in Figure 4 where a possible hypothesis of clustering of crime types could be present. Lastly, descriptive statistics are used for finding the mean, median, mode, standard deviation, and outliers are calculated using descriptive statistics in Figure X-X. 
+In our analysis we are leveraging exploratory data analysis and visualization with the R programming language to gain an understanding of our chosen data set and eventually suggest a hypothesis if deemed appropriate (Rogerson, 2011). The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2 to quickly spot heightened observations. Figure 3 separates the data based on type, month, and year. A spatial display using R Leaflet is in Figure 4 where a possible hypothesis of crime type clustering could be present. Lastly, descriptive statistics are used for finding the mean, median, mode, standard deviation, and outliers for grasping a better understanding of our data. 
 
 ## DataTable
 ```{r, echo=TRUE}
@@ -109,22 +108,22 @@ sub_crime_agg <- crimesstl_agg %>%
 
 datatable(sub_crime_agg, width = "auto")
 ```
-**Table 1.** By utilizing the datatable we can order count rate in a descending order and see that DUIs in May have the highest hit rate for a single crime type based on monthly intervals.
+**Table 1.** By utilizing the datatable we can order count rate in a descending order and see that DUIs in May have the highest hit rate for a single crime type based on monthly intervals. 
 
 ## What type of crimes occur more than others?
 
-By summing the count column based on the type of crime we can visualize that arson occurs the most in comparison to DUIs and homicides. Figure 1 represents this calculation with a bar chart.
+One might assume from observations in Table 1 that DUIs would be the highest counted crime in our study. By summing the count columns from all crimes in 2013 and 2014 we actually see that arson has the highest counted crime type in comparison to homicide an DUIs. The number for this summation and conclusion is visible in Figure 1. From this conclusion I would make an effect to understand what event took place to increase the level of arson above the number of DUIs.
 
 ```{r echo=TRUE}
 #Barchart of crimes by crimetype
 counts <- table(crimesstl$crimetype)
 barplot(counts, col = "cornflowerblue", main = "Number of Crimes by Crime Type", xlab="Crime Type", ylab="Number of Crimes")
 ```
-**Figure 1.** In combined years 2013 and 2014 Arson is the most common crime followed by DUI, and homicide.
+**Figure 1.** In combined years 2013 and 2014 Arson is the most common crime followed by DUI, and homicide. This chart is informative, and accurate, but may be misleading to state that our findings conclude that arson is consistently more common that DUIs in St. Louis.
 
 ## Temporal patterns associated with each crime 
 
-Now let's dive deeper into the data, and start to visualize information based on when it took place. Based on the 
+Now let's dive deeper into the data, and start to visualize information based on when it took place. Perhaps with understanding when the events took place, we can start to see if there a particular reason or event that is skewing our data to a misguided interpretation. I would hypothesis in this stage of the process that an event occurred in 2013 or 2014 that led to an extreme level of arson.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 #Histograms of crimes by observations per month
@@ -138,9 +137,9 @@ ggplot(crimesstl, aes(x = month)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   scale_x_continuous(breaks = 2:12)
 ```
-**Figure 2.** Most crimes took place in the month of August.
+**Figure 2.** By combining all crime types in 2013 and 2014, most observations took place in the month of August.
 
-Utilizing a facet wrapped plot based on crime type we can see when each observation happens the most based on the month and also compare the years 2013 and 2014. 
+Now that have seen the population of our data summed into one chart that gives an interesting perspective that the month of august experienced and above average number of crimes. We know very little of what kind of events took place. Utilizing a facet wrapped plot based on crime type and year we can see when each category experienced peaks and troughs based on monthly intervals. 
 
 ```{r echo=TRUE}
 crimess2013 <- subset(crimesstl, year == "2013")
@@ -172,9 +171,11 @@ plot_2014 <- ggplot(counts_df_2014, aes(x = Month, y = Count, fill = CrimeType))
               scale_fill_brewer(palette = "Set1") +  # You can change the palette if needed
               facet_wrap(~ CrimeType, scales = "free_x", ncol = 1)
 
-grid.arrange(plot_2013, plot_2014, nrow=1,ncol=2, widths = c(.75, 1))
+grid.arrange(plot_2013, plot_2014, nrow=1,ncol=2, widths = c(.75, 1), top = "Crime Type Event Comparison")
 ```
 **Figure 3.** Arson levels are heightened in August of 2013 and DUIs are hightened in April of 2014. The ggplot library and the facet_wrap() function was used to seperate the variables and visualize the information side by side. 
+
+Arson events in August and September of 2013 are appearing at elevated levels.
 
 ## Where did the crimes take place?
 
