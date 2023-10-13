@@ -112,18 +112,18 @@ datatable(sub_crime_agg, width = "auto")
 
 ## What type of crimes occur more than others?
 
-One might assume from observations in Table 1 that DUIs would be the highest counted crime in our study. By summing the count columns from all crimes in 2013 and 2014 we actually see that arson has the highest counted crime type in comparison to homicide an DUIs. The number for this summation and conclusion is visible in Figure 1. From this conclusion I would make an effect to understand what event took place to increase the level of arson above the number of DUIs.
+One might assume from observations in Table 1 that DUIs would be the highest counted crime in our study. By summing the count columns from all crimes in 2013 and 2014 we actually see that arson has the highest counted crime type in comparison to homicide an DUIs. The number for this summation and conclusion is visible in Figure 1. From this conclusion I would make an effort to understand what event took place to increase the level of arson above the number of DUIs.
 
 ```{r echo=TRUE}
 #Barchart of crimes by crimetype
 counts <- table(crimesstl$crimetype)
 barplot(counts, col = "cornflowerblue", main = "Number of Crimes by Crime Type", xlab="Crime Type", ylab="Number of Crimes")
 ```
-**Figure 1.** In combined years 2013 and 2014 Arson is the most common crime followed by DUI, and homicide. This chart is informative, and accurate, but may be misleading to state that our findings conclude that arson is consistently more common that DUIs in St. Louis.
+**Figure 1.** In combined years 2013 and 2014 Arson is the most common crime followed by DUI, and homicide. This chart is informative, and accurate, but may be misleading to conclude that arson is consistently more common than DUIs in St. Louis.
 
 ## Temporal patterns associated with each crime 
 
-Now let's dive deeper into the data, and start to visualize information based on when it took place. Perhaps with understanding when the events took place, we can start to see if there a particular reason or event that is skewing our data to a misguided interpretation. I would hypothesis in this stage of the process that an event occurred in 2013 or 2014 that led to an extreme level of arson.
+Now let's dive deeper into the data, and start to visualize information based on when it took place. Perhaps with understanding when the events took place, we can start to see if there is a particular reason or event that is skewing our data to a misguided interpretation. I would hypothesis in this stage of the process that an event occurred in 2013 or 2014 that led to an extreme level of arson.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 #Histograms of crimes by observations per month
@@ -139,7 +139,7 @@ ggplot(crimesstl, aes(x = month)) +
 ```
 **Figure 2.** By combining all crime types in 2013 and 2014, most observations took place in the month of August.
 
-Now that have seen the population of our data summed into one chart that gives an interesting perspective that the month of august experienced and above average number of crimes. We know very little of what kind of events took place. Utilizing a facet wrapped plot based on crime type and year we can see when each category experienced peaks and troughs based on monthly intervals. 
+Now that we have seen the population of our data summed into one chart that gives an interesting perspective that the month of august experienced an above average number of crimes. We know very little of what kind of events took place. Utilizing a facet wrapped plot based on crime type and year we can see when each category of crimes experienced peaks and troughs based on monthly intervals. 
 
 ```{r echo=TRUE}
 crimess2013 <- subset(crimesstl, year == "2013")
@@ -173,9 +173,13 @@ plot_2014 <- ggplot(counts_df_2014, aes(x = Month, y = Count, fill = CrimeType))
 
 grid.arrange(plot_2013, plot_2014, nrow=1,ncol=2, widths = c(.75, 1), top = "Crime Type Event Comparison")
 ```
-**Figure 3.** Arson levels are heightened in August of 2013 and DUIs are hightened in April of 2014. The ggplot library and the facet_wrap() function was used to seperate the variables and visualize the information side by side. 
+**Figure 3.** Arson levels are heightened in August of 2013. The ggplot library and the facet_wrap() function was used to seperate the variables and visualize the information side by side. 
 
 Arson events in August and September of 2013 are appearing at elevated levels.
+
+## Descriptive Statistics
+
+
 
 ## Where did the crimes take place?
 
@@ -254,6 +258,8 @@ leaflet(crimesstl) %>%
 **Figure 4.** Strong spatial dependence is portrayed in arson and homicides, while the opposite is viewed for DUIs. 
 
 Spatial dependent patterns for arson and homicide might lead us to hypothesize an underlying reason for the clustering of events. DUIs are the other hand lack spatial dependence and the variation is more dispersed across the city. Therefore spatial autocorrelation is higher regarding arson and homicides, than DUIs. 
+
+#### If theres time make a graduated color palette for arson to see the if the events were happening in waves across the city.
 
 ## Descriptive Statistics
 
