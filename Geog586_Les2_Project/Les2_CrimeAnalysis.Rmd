@@ -28,6 +28,10 @@ h2 {
   <!-- border: 1px solid black; -->
 }
 
+h5 {
+  color: black !important;
+}
+
 #sidebar {
   background-color: black;
 }
@@ -56,7 +60,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-We will be performing exploratory data analysis for three types of recorded criminal activity in the St. Louis area. The study focuses on arson, DUIs, and homicides. The purpose of this study is to answer questions about that data and gain familiarity for continuing analysis. Our methods in the analysis will use descriptive statistical techniques to answer questions, such as, "where did these crimes take place?" (Figure 4), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1).
+We will be performing exploratory data analysis for three types of recorded criminal activity in the St. Louis area. The study focuses on arson, DUIs, and homicides. The purpose of this study is to answer questions about that data and gain familiarity for continuing analysis. Our methods in the analysis will use descriptive statistical techniques to answer questions, such as, "where did these crimes take place?" (Figure 4), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1). Through the descriptive methods, we will be looking for unexpected results (Rogerson, 2011).
 
 ## Required R Packages
 
@@ -185,7 +189,9 @@ Arson events in August and September of 2013 are appearing at elevated levels.
 
 Diplaying point location based on attributes might allow us to create potential hypothesis if location is a determining factor for the results we have seen so far. Clusters of crime type can be seen across St. Louis in Figure 4 below. 
 
+##### Spatial Data Visualization
 ```{r echo=TRUE, message=FALSE, warning = FALSE}
+
 #This will create a map with all of the points
 gis_file <- paste(file_dir_gis,"stl_boundary_ll.shp", sep="")
 #Read the St Louis Boundary Shapefile
@@ -194,6 +200,7 @@ StLouisBND <- readOGR(gis_file, layer = "stl_boundary_ll", GDAL1_integer64_polic
 crimess22 <- subset(crimesstl, crimetype == "arson")
 crimess33 <- subset(crimesstl, crimetype == "dui")
 crimess44 <- subset(crimesstl, crimetype == "homicide")
+
 #Create an interactive map for each crimetype
 #To view a particular crime you will want to create a map using a subset of the data.
 #Or use leaflet and include a background map to put the crime in context.
@@ -253,7 +260,14 @@ leaflet(crimesstl) %>%
            labels = c("St. Louis", "Arson", "DUI", "Homicide"), 
            title = "Crime Type",
            opacity = 1
-  )
+  ) %>%
+  
+  htmlwidgets::onRender("
+        function() {
+            $('.leaflet-control.map-title').prepend('<label style=\"text-align:center\">Layer On/Off</label>');
+        }
+    ")
+
 ```
 **Figure 4.** Strong spatial dependence is portrayed in arson and homicides, while the opposite is viewed for DUIs. 
 
