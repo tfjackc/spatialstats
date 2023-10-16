@@ -60,7 +60,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-We will be performing exploratory data analysis for three types of recorded criminal activity in the St. Louis area. The study focuses on arson, DUIs, and homicides. The purpose of this study is to answer questions about that data and gain familiarity for continuing analysis. Our methods in the analysis will use descriptive statistical techniques to answer questions, such as, "where did these crimes take place?" (Figure 4), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1). Through the descriptive methods, we will be looking for unexpected results (Rogerson, 2011).
+We will be performing exploratory data analysis for three types of recorded criminal activity in the St. Louis area. The study focuses on arson, DUIs, and homicides. The purpose of this study is to answer questions about that data and gain familiarity for continuing analysis. Our methods in the analysis will use descriptive statistical techniques to answer questions, such as, "where did these crimes take place?" (Figure 5), "On average, how often are they happening?" (Figure 2 & Figure 3), and "Which crime is happening the most?" (Figure 1). Through the descriptive methods, we will be looking for unexpected results (Rogerson, 2011).
 
 ## Required R Packages
 
@@ -84,7 +84,7 @@ library(DT)
 
 ## Methods
 
-In our analysis we are leveraging exploratory data analysis and visualization with the R programming language to gain an understanding of our chosen data set and eventually suggest a hypothesis if deemed appropriate (Rogerson, 2011). The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2 to quickly spot heightened observations. Figure 3 separates the data based on type, month, and year. A spatial display using R Leaflet is in Figure 4 where a possible hypothesis of crime type clustering could be present. Lastly, descriptive statistics are used for finding the mean, median, mode, standard deviation, and outliers for grasping a better understanding of our data. 
+In our analysis we are leveraging exploratory data analysis and visualization with the R programming language to gain an understanding of our chosen data set and eventually suggest a hypothesis if deemed appropriate (Rogerson, 2011). The datatable shown in Table 1 allows us to preview the selected variables and observations. The table was filtered to show crime types, and frequency per month. Further insights are gained by showing trends in total number of crimes based on category (Figure 1) and crimes per month with an overlaid density curve in Figure 2 to quickly spot heightened observations. Figure 3 separates the data based on type, month, and year. A spatial display using R Leaflet is in Figure 5 where a possible hypothesis of crime type clustering could be present. Lastly, the Descriptive Statistics section calculates the mean, median, standard deviation, and outliers for grasping a better understanding of our data. 
 
 ## DataTable
 ```{r, echo=TRUE}
@@ -179,15 +179,78 @@ grid.arrange(plot_2013, plot_2014, nrow=1,ncol=2, widths = c(.75, 1), top = "Cri
 ```
 **Figure 3.** Arson levels are heightened in August of 2013. The ggplot library and the facet_wrap() function was used to seperate the variables and visualize the information side by side. 
 
-Arson events in August and September of 2013 are appearing at elevated levels.
-
 ## Descriptive Statistics
 
+Arson events in August and September of 2013 are appearing at elevated levels. But, are these high levels of arson reflective of the actual average of recorded arson crimes across combined years? The mean which is a central tendency of a data set can be skewed by outliers that don't reflect the typical values. The mean and the median values, as well as the quartile ranges can be seen for all crime types in Tables 2 and 3.
+```{r}
+sub_crime_agg_arson <- crimesstl_agg %>%
+  filter(crimetype == 'arson') %>%
+  select(count, crimetype, month) 
 
+sub_crime_agg_dui <- crimesstl_agg %>%
+  filter(crimetype == 'dui') %>%
+  select(count, crimetype, month) 
+
+sub_crime_agg_homicide <- crimesstl_agg %>%
+  filter(crimetype == 'homicide') %>%
+  select(count, crimetype, month) 
+
+  
+arson <- summary(sub_crime_agg_arson)
+df_arson <- data.frame(arson)
+dfsub_arson <- df_arson %>%  
+  subset(select = -c(Var1)) %>%
+  rename(Arson = Var2)
+
+  
+dui <- summary(sub_crime_agg_dui)
+df_dui <- data.frame(dui)
+dfsub_dui <- df_dui %>%  
+  subset(select = -c(Var1)) %>%
+  rename(DUI = Var2)
+
+  
+homicide <- summary(sub_crime_agg_homicide)
+df_homicide <- data.frame(homicide)
+dfsub_homicide <- df_homicide %>%  
+  subset(select = -c(Var1)) %>%
+  rename(Homicide = Var2)
+```
+```{r}
+DT::datatable(dfsub_arson[1:6, ])
+```
+**Table 2.** The mean value for arson events in St. Louis is 2.351 and above the median value of 2.0 with a Q75 value of 3.0. Since the mean is above the average, the data is skewed to the right.
+
+By calculating the descriptive statistics for arson we can reveal that the high value events in August and September of 2013 are outlier events and far above the average. In attempt to clarify how far above average the outlier values are, the standard deviation for arson counts across 2013 and 2014 is 2.13. Making certain months that reached 10 to 13 counts 3.56 and 5 deviations from the mean. The overall spread of values for arson are relatively tight, but certain months with high values attempts to convince you that arson is more common than DUIs.
+
+```{r}
+DT::datatable(dfsub_dui[1:6, ])
+```
+**Table 3.** DUIs reveal and average of 2.86 per month for 2013 and 2014. Once again, another data set right skewed with an average above the median.
+
+By understanding the mean and median for DUIs and arson, we can conclude that there are move DUIs per month on average than arson. A visual of the distribution of data can be seen in Figure 4 in the form of a boxplot.
+
+Boxplots are informative diagrams that allow us to see the quartile ranges (Q1, Q2 - Median, and Q3), the low and high end the range, and outliers in the data. IQR is determined by Q3 - Q1, and values that exist below Q1 − 1.5(IQR) as well as values above Q3 + 1.5(IQR) are deemed as outliers. All crime types are right skewed with outliers existing above the high range. 
+
+```{r echo=TRUE}
+#BoxPlots are useful for comparing data. 
+#Use the dataset crimeStLouis20132014b_agg.csv.  
+#These data are aggregated by neighbourhood.  
+agg_crime_file <-paste(file_dir_crime,"crimeStLouis20132014b_agg.csv", sep = "")
+#check everything worked ok with accessing the file
+#file.exists(agg_crime_file)
+crimesstlagg <- read.csv(agg_crime_file, header=TRUE,sep=",")
+ 
+#Compare crimetypes
+boxplot(count~crimetype, data=crimesstlagg,main="Boxplots According to Crime Type",
+            xlab="Crime Type", ylab="Number of Crimes",
+            col="cornsilk", border="brown", pch=19)
+```
+**Figure 4.** Median values are represented by the thick brown line in the center of the boxplot. We see the outliers for all crime types well above the highest whisker. The plot does reveal an interesting point that the median value for homicides in 2013 and 2014 is higher than the median values for arson and DUIs, which I would not have predicted.
 
 ## Where did the crimes take place?
 
-Diplaying point location based on attributes might allow us to create potential hypothesis if location is a determining factor for the results we have seen so far. Clusters of crime type can be seen across St. Louis in Figure 4 below. 
+Diplaying point location based on attributes might allow us to create potential hypothesis if location is a determining factor for the results we have seen so far. Clusters of crime type can be seen across St. Louis in Figure 5 below. 
 
 ##### Spatial Data Visualization
 ```{r echo=TRUE, message=FALSE, warning = FALSE}
@@ -260,53 +323,16 @@ leaflet(crimesstl) %>%
            labels = c("St. Louis", "Arson", "DUI", "Homicide"), 
            title = "Crime Type",
            opacity = 1
-  ) %>%
-  
-  htmlwidgets::onRender("
-        function() {
-            $('.leaflet-control.map-title').prepend('<label style=\"text-align:center\">Layer On/Off</label>');
-        }
-    ")
-
+  )
 ```
-**Figure 4.** Strong spatial dependence is portrayed in arson and homicides, while the opposite is viewed for DUIs. 
+**Figure 5.** Strong spatial dependence is portrayed in arson and homicides, while the opposite is viewed for DUIs. 
 
-Spatial dependent patterns for arson and homicide might lead us to hypothesize an underlying reason for the clustering of events. DUIs are the other hand lack spatial dependence and the variation is more dispersed across the city. Therefore spatial autocorrelation is higher regarding arson and homicides, than DUIs. 
+Spatial dependent patterns for arson and homicide might lead us to hypothesize an underlying reason for the clustering of events. DUIs on the other hand lack spatial dependence and the variation is more dispersed across the city. Therefore spatial autocorrelation could potentially be hypothesized as high regarding arson and homicides, and low for DUIs. 
 
-#### If theres time make a graduated color palette for arson to see the if the events were happening in waves across the city.
+## Conclusion
 
-## Descriptive Statistics
+Exploratory data analysis is a powerful process for understanding the values you are attempting to study. Descriptive statistics opens up insights and allows us find stories within the data. First impressions leads us to believe that arson is more common than DUIs, but understanding the central tendencies allows us to see that DUIs actually happen more on average. More research should be done to see why homicides have an increased median value over the other crime types. Spatial distributions should be analyzed to test if a clustering hypothesis for events in St. Louis is valid or null. 
 
-Boxplots are informative diagrams that allow us to see the quartile ranges (Q1, Q2 - Median, and Q3), the low and high end the range, and outliers in the data. IQR is determined by Q3 - Q1, and values that exist below Q1 − 1.5(IQR) as well as values above Q3 + 1.5(IQR) are deemed as outliers. 
+## References
 
-```{r echo=TRUE}
-#Summarise data
-summary(crimesstl)
- 
-#Make a data frame (a data structure) with crimes by crime type
-dt <- data.frame(cnt=crimesstl$count, group=crimesstl$crimetype)
-#save these grouped data to a variable so you can use it other commands
-grp <- group_by(dt, group)
- 
-#Summarise data from library (dplyr)
-#Summarise the number of counts for each group
-summarise(grp, sum=sum(cnt))
-#transpose the table
-tapply(crimesstl$count, crimesstl$crimetype,sum)
-```
-
-```{r echo=TRUE}
-#BoxPlots are useful for comparing data. 
-#Use the dataset crimeStLouis20132014b_agg.csv.  
-#These data are aggregated by neighbourhood.  
-agg_crime_file <-paste(file_dir_crime,"crimeStLouis20132014b_agg.csv", sep = "")
-#check everything worked ok with accessing the file
-#file.exists(agg_crime_file)
-crimesstlagg <- read.csv(agg_crime_file, header=TRUE,sep=",")
- 
-#Compare crimetypes
-boxplot(count~crimetype, data=crimesstlagg,main="Boxplots According to Crime Type",
-            xlab="Crime Type", ylab="Number of Crimes",
-            col="cornsilk", border="brown", pch=19)
-```
-**Figure 5.** 
+Rogerson, P.A. (2011), Statistical Methods for Geography

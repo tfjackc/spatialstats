@@ -1,3 +1,4 @@
+library(DT)
 # set working directories
 file_dir_crime <- "crime/"
 
@@ -30,7 +31,13 @@ sub_crime_agg_homicide <- crimesstl_agg %>%
   select(count, crimetype, month) 
 
   
-summary(sub_crime_agg_arson)
+arson <- summary(sub_crime_agg_arson)
+df_arson <- data.frame(arson)
+dfsub <- df_arson %>%  
+  subset(select = -c(Var1)) %>%
+  rename(Arson = Var2)
+
+
 summary(sub_crime_agg_dui)
 summary(sub_crime_agg_homicide)
-
+DT::datatable(dfsub[1:6, ])
