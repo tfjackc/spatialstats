@@ -14,10 +14,23 @@ crimesstl <- read.csv(crime_file, header=TRUE,sep=",")
 crimesstl_agg <- read.csv(crime_file_agg, header=TRUE,sep=",") 
 
 #create a list of the unique crime types in the data set and view what these are so that you can select using these so that you can explore their distributions.
-listcrimetype <-unique(crimesstl$crimetype)
+#listcrimetype <-unique(crimesstl$crimetype)
 
 #returns a datatable of the loaded csv
-sub_crime_agg <- crimesstl_agg %>%
-  select(count, crimetype, month, year)
+sub_crime_agg_arson <- crimesstl_agg %>%
+  filter(crimetype == 'arson') %>%
+  select(count, crimetype, month) 
 
-datatable(sub_crime_agg, width = "auto")
+sub_crime_agg_dui <- crimesstl_agg %>%
+  filter(crimetype == 'dui') %>%
+  select(count, crimetype, month) 
+
+sub_crime_agg_homicide <- crimesstl_agg %>%
+  filter(crimetype == 'homicide') %>%
+  select(count, crimetype, month) 
+
+  
+summary(sub_crime_agg_arson)
+summary(sub_crime_agg_dui)
+summary(sub_crime_agg_homicide)
+
