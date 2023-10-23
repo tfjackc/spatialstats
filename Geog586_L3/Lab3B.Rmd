@@ -1,0 +1,98 @@
+---
+title: "GEOG 586 Lab 3B"
+author: "Jack Colpitt"
+date: "10/22/2023"
+output:
+    html_notebook
+---
+
+# St. Louis Crime Point Pattern Analysis
+
+#### Packages used in project
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(sf)
+library(spatstat)
+library(tidyverse)
+```
+
+What were your overall findings about crime in your study area?
+
+Where did crimes take place? Was there a particular spatial distribution associated with each of the crimes? Did they take place in a particular part of the city?
+
+Did the different crimes you assessed cluster in different parts of the study area or did they occur in the same parts of the city? 
+
+What additional types of analysis would be useful?
+
+```{r echo=FALSE, warning=FALSE}
+#crime data
+file_dir_gis <- paste0(getwd(), "/Geog586_Les3_Project/gis/")
+gis_file <- paste0(file_dir_gis, "stl20132014sube.shp", sep="")
+
+#study area boundary
+crimes_shp_prj<- read_sf(gis_file)
+gis_file_2 <-paste0(file_dir_gis,"stl_boundary.shp", sep="")
+StLouis_BND_prj <-read_sf(gis_file_2)
+
+#Set up the analysis environment by creating an analysis window from the city boundary
+Sbnd <-as.owin(StLouis_BND_prj)
+#check the shapefile will plot correctly
+plot(Sbnd)
+
+#add the crime events to the analysis window
+crimesppp <-as.ppp(crimes_shp_prj)
+
+#plot the points to the boundary as a solid red circle one-half the default plotting size
+points(crimesppp$x, crimesppp$y, pch = 19, cex=0.5, col = "red")
+```
+## Kernel Density Analysis
+```{r}
+#KDE Analysis
+ 
+#Density
+K1 <-density(crimesppp) # Using the default bandwidth
+plot(K1, main=NULL, las=1)
+contour(K1, add=TRUE, col = "white")
+#add a label to the top of the plot
+mtext("default bandwidth")
+```
+
+```{r}
+#Density–changing bandwidth
+K2 <-density(crimesppp, sigma=500) # set different bandwidths. This data is in projected feet.
+plot(K2, main=NULL)
+contour(K2, add=TRUE, col = "white")
+mtext("500 feet") 
+```
+```{r}
+#Density–optimal bandwidth
+ 
+#R provides a function that will suggest an optimal bandwidth to use:
+#You can replicate this code to find out the other bandwidth values. when you examine 
+#individual crime types later in the lesson.
+#KDE_opt <-bw.diggle(crimesppp)
+#KDE_opt
+
+K3 <-density(crimesppp, sigma=KDE_opt) # Using the diggle bandwidth
+plot(K3, main=NULL)
+contour(K3, add=TRUE, col = "white")
+
+# Convert the bandwidth vector to a character string with 5 character places 
+diggle_bandwidth <-toString(KDE_opt, width = 5) 
+# Add the bandwidth value to the plot title 
+mtext(diggle_bandwidth) 
+
+#Now that you are familiar with how KDE works, lets create a KDE for one particular crime type. 
+ 
+#To select an individual crime specify the crimetype as follows:
+xhomicide <-crimesppp[crimes_shp_prj$crimet2=="homicide"]
+
+KHom<-density(xhomicide) # Using the default bandwidth
+plot(KHom, main=NULL, las=1)
+contour(KHom, add=TRUE, col = "white")
+plot(xhomicide, pch=19, col="white", use.marks=FALSE, cex=0.75, add=TRUE) #the pch=19 sets the symbol type 
+#to a solid filled circle, the col="white" sets the fill color for the symbols,
+#we set use.marks=FALSE so that we aren't plotting a unique symbol (ie square, circle, etc) for each observation, 
+#cex=0.75 sets the size of the symbol to be at 75% of the default size, 
+#and add=TRUE draws the crime points on top of the existing density surface.
+mtext("homicide default bandwidth") 
+```
