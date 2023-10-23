@@ -1,0 +1,90 @@
+---
+title: "GEOG 586 Lab 3"
+author: "Jack Colpitt"
+date: "10/22/2023"
+output:
+    html_notebook
+---
+```{r echo=FALSE}
+library(spatstat)
+library(tidyverse)
+library(RColorBrewer)
+```
+## The Independent Random Process
+```{r echo=FALSE}
+par(mfrow=c(1, 3))
+pp1 <- rpoispp(100)
+plot(pp1)
+pp2 <- rpoispp(100)
+plot(pp2)
+pp3 <- rpoispp(100)
+plot(pp3)
+```
+**Figure 1.** Plots pp1 - pp3 are generated through the rpoispp function in the spatstat library.
+
+&nbsp;&nbsp;&nbsp;&nbsp; The events generated in the plots pp1 - pp3 (especially after many iterations) appear to exhibit complete spatial randomness. Which assumes that events have an equal likelihood of occurring anywhere within the study area, independent of the locations of other events (Moraga, 2023). The observations in the plot do not represent any first or second order effects, because the rpoispp() function generates 100 random points independently of each other. Points that appear clustered are due to the probability of 1 in 100 points landing in the same or similar place. In summary, the points are occurring without a trend, and do not display any interaction.
+
+## An Inhomogeneous Poisson Process
+
+```{r echo=FALSE}
+pp <- rpoispp(function(x,y) {100*x + 100*y})
+plot(density(pp), main = 'density plot')
+plot(pp, pch = 1, add = TRUE)
+```
+**Figure 2.** rpoispp(function(x,y) {100*x + 100*y}).
+
+```{r echo=FALSE}
+pp <- rpoispp(function(x,y) {100*x*x + 100*y*y})
+plot(density(pp), main = 'density plot')
+plot(pp, pch = 1, add = TRUE)
+```
+**Figure 3.** rpoispp(function(x,y) {100*x*x + 100*y*y}).
+```{r echo=FALSE}
+pp <- rpoispp(function(x,y) {200*sqrt((x-0.5)^2 + (y-0.5)^2)})
+plot(density(pp), main='density plot')
+plot(pp, pch = 1, add = TRUE)
+```
+**Figure 4.** rpoispp(function(x,y) {200*sqrt((x-0.5)^2 + (y-0.5)^2)})
+
+&nbsp;&nbsp;&nbsp;&nbsp; The patterns in Figures 2 - 4 are generated with mathematical functions to produce a spatial trend in space. These differ from the random distributions in Figure 1 due to fixed intensity values of the Poisson Process in Figures 2 - 4 declaring a first order effect. Essentially, the functions are generating peaks and troughs in elevation based on the mathematical equation. For example, If you could picture a blanket, Figure 2 would be held up at one corner at a fixed 45 degree angle, and Figure 3 would be picked up on all four corners with the center hanging low towards the ground. Figure 4 would look similiar to Figure 3, but terminating at the center to a fixed point instead of a parabola shape (almost as if a rock was holding down the center). I would argue that the point patterns would be slightly difficult to interpret without the density overlay or understanding the math behind the functions.
+
+## Processes with Interaction Between Events
+
+```{r echo=FALSE}
+par(mfrow=c(1, 3))
+pp1 <- rSSI(0.01, 200)
+color_palette <- brewer.pal(5, "YlGnBu")
+plot(density(pp1), col = color_palette, main = 'rSSI 200 Points')
+plot(pp1, pch = 1, add = TRUE)
+
+pp2 <- rSSI(0.01, 100)
+color_palette <- brewer.pal(5, "YlGnBu")
+plot(density(pp2), col = color_palette, main = 'rSSI 100 Points')
+plot(pp2, pch = 1, add = TRUE)
+
+pp3 <- rSSI(0.01, 50)
+color_palette <- brewer.pal(5, "YlGnBu")
+plot(density(pp3), col = color_palette, main = 'rSSI 50 Points')
+plot(pp3, pch = 1, add = TRUE)
+```
+**Figure 5.** Point pattern created with the rSSI Simple Sequential Inhibition Process. The plots descending in point pattern iterations display the ability for the rSSI function to populate a study with uniform point distribution.
+
+```{r echo=FALSE}
+# Create a random point process
+rtom <- rThomas(5, 0.1, 20)
+color_palette <- brewer.pal(9, "YlOrRd")
+plot(density(rtom), col = color_palette, main='rThomas')
+plot(rtom, pch = 1, add = TRUE)
+```
+**Figure 6.** Point pattern created with the clustering process rThomas.
+
+
+&nbsp;&nbsp;&nbsp;&nbsp; The Simple Sequential Inhibition process (Figure 5 / rSSI) simulates point patterns (groups of points dispersed throughout a space) by placing points at random locations in the area, but discarding them if they are too close to existing events. In contrast to rSSI, the clustering process (rThomas) generates events in a way that increases the likelihood that they will be close to one another. Cluster centers are created using the rThomas intensity function, and the size of clusters is determined by the standard deviation of the distance from each cluster center, which is normally distributed. The patterns in created by rSSI in Figure 5 do appear random visually, but the density plots helps to determine the uniform distribution. The points created by the rThomas function do not appear random, and display aggregated effects. Figure 5 and 6 both display second order effects since the points patters are created by the prescence of other points.
+
+## References:
+
+Moraga, Paula. (2023). Spatial Statistics for Data Science: Theory and Practice with R. Chapman & Hall/CRC.
+
+
+
+
