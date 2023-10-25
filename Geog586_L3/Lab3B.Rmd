@@ -12,7 +12,10 @@ output:
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(sf)
 library(spatstat)
+library(ggplot2)
 library(tidyverse)
+library(dplyr)
+library(gridExtra)
 ```
 
 What were your overall findings about crime in your study area?
@@ -30,69 +33,119 @@ gis_file <- paste0(file_dir_gis, "stl20132014sube.shp", sep="")
 
 #study area boundary
 crimes_shp_prj<- read_sf(gis_file)
+crimes_sf <- st_as_sf(crimes_shp_prj)
+
 gis_file_2 <-paste0(file_dir_gis,"stl_boundary.shp", sep="")
 StLouis_BND_prj <-read_sf(gis_file_2)
+Sbnd <-st_as_sf(StLouis_BND_prj)
 
 #Set up the analysis environment by creating an analysis window from the city boundary
-Sbnd <-as.owin(StLouis_BND_prj)
-#check the shapefile will plot correctly
-plot(Sbnd)
+Sbnd <-st_as_sf(StLouis_BND_prj)
+#plot(Sbnd)
 
 #add the crime events to the analysis window
 crimesppp <-as.ppp(crimes_shp_prj)
 
 #plot the points to the boundary as a solid red circle one-half the default plotting size
-points(crimesppp$x, crimesppp$y, pch = 19, cex=0.5, col = "red")
+#points(crimesppp$x, crimesppp$y, pch = 19, cex=0.5, col = "blue")
+
+geom_crimes_sf <- crimes_sf %>%
+  mutate(lon = st_coordinates(.)[,1],
+         lat = st_coordinates(.)[,2]) %>%
+  select(crimet2, lon, lat) 
+
+#all_crimes <- ggplot() +
+#  geom_sf(data = Sbnd) +
+#  geom_point(data = geom_crimes_sf, aes(x = lon, y = lat)) +
+#  labs(title = "St. Louis Crimes",  color = "") +
+#  theme(legend.position = "none",
+#        panel.grid = element_blank(),
+#        axis.title = element_blank(),
+#        axis.text = element_blank(),
+#        axis.ticks = element_blank(),
+#        panel.background = element_blank()) 
+
+
+
+sf_homicide <-geom_crimes_sf %>%
+  filter(crimet2 == 'homicide')
+
+homicides <- ggplot() +
+  geom_sf(data = Sbnd) +
+  geom_point(data = sf_homicide, aes(x = lon, y = lat)) +
+  labs(title = "St. Louis Homicides", subtitle="2013 - 2014",  color = "") +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank()) 
+
+homicides
 ```
+**Figure 1.** Homicide crimes plotted against all crime types for St. Louis. 
+
 ## Kernel Density Analysis
-```{r}
-#KDE Analysis
- 
-#Density
-K1 <-density(crimesppp) # Using the default bandwidth
+
+Kernel estimation allows for an analysis of intensity at all locations in the study area, not just at the location of the events (Lloyd 2011). Making it a great choice for understand first order effects.
+```{r, echo=FALSE}
+par(mfrow=c(1, 3))
+xhomicide <-crimesppp[crimes_shp_prj$crimet2=="homicide"]
+
+K1 <-density(xhomicide) # Using the default bandwidth
 plot(K1, main=NULL, las=1)
+plot(xhomicide, pch=19, col="white", use.marks=FALSE, cex=0.75, add=TRUE)
 contour(K1, add=TRUE, col = "white")
 #add a label to the top of the plot
-mtext("default bandwidth")
-```
+mtext("default (Oversmoothed)") 
 
-```{r}
 #Density–changing bandwidth
 K2 <-density(crimesppp, sigma=500) # set different bandwidths. This data is in projected feet.
 plot(K2, main=NULL)
+plot(xhomicide, pch=19, col="white", use.marks=FALSE, cex=0.75, add=TRUE)
 contour(K2, add=TRUE, col = "white")
-mtext("500 feet") 
-```
-```{r}
-#Density–optimal bandwidth
- 
-#R provides a function that will suggest an optimal bandwidth to use:
-#You can replicate this code to find out the other bandwidth values. when you examine 
-#individual crime types later in the lesson.
-#KDE_opt <-bw.diggle(crimesppp)
-#KDE_opt
+mtext("500 ft (Undersmoothed)") 
 
-K3 <-density(crimesppp, sigma=KDE_opt) # Using the diggle bandwidth
+KDE_opt <-bw.diggle(xhomicide)
+K3 <-density(xhomicide, sigma=KDE_opt) # Using the diggle bandwidth
 plot(K3, main=NULL)
+plot(xhomicide, pch=19, col="white", use.marks=FALSE, cex=0.75, add=TRUE)
 contour(K3, add=TRUE, col = "white")
 
-# Convert the bandwidth vector to a character string with 5 character places 
-diggle_bandwidth <-toString(KDE_opt, width = 5) 
-# Add the bandwidth value to the plot title 
-mtext(diggle_bandwidth) 
+diggle_bandwidth <-toString(KDE_opt, width = 5)
+mtext("Suggested Optimal")
+```
+**Figure 2.** Range of variation in bandwidth estimation for the kernel density estimation. 
 
-#Now that you are familiar with how KDE works, lets create a KDE for one particular crime type. 
+# Nearest Neighbour Analysis
+```{r}
+
+nnd <-nndist.ppp(xhomicide)
+hist(nnd)
+summary(nnd)
  
-#To select an individual crime specify the crimetype as follows:
-xhomicide <-crimesppp[crimes_shp_prj$crimet2=="homicide"]
+mnnd <-mean(nnd)
+exp_nnd <-(0.5/ sqrt(xhomicide$n / area.owin(Sbnd)))
+mnnd / exp_nnd
+```
 
-KHom<-density(xhomicide) # Using the default bandwidth
-plot(KHom, main=NULL, las=1)
-contour(KHom, add=TRUE, col = "white")
-plot(xhomicide, pch=19, col="white", use.marks=FALSE, cex=0.75, add=TRUE) #the pch=19 sets the symbol type 
-#to a solid filled circle, the col="white" sets the fill color for the symbols,
-#we set use.marks=FALSE so that we aren't plotting a unique symbol (ie square, circle, etc) for each observation, 
-#cex=0.75 sets the size of the symbol to be at 75% of the default size, 
-#and add=TRUE draws the crime points on top of the existing density surface.
-mtext("homicide default bandwidth") 
+# Quadrat Analysis
+
+```{r}
+#Quadrat Analysis 
+q <-quadratcount(xhomicide, 4, 8) 
+plot(q) 
+ 
+#Add intensity of each quadrat
+#Note, depending on your version of R, this line of code may not work correctly 
+plot(intensity(q, image=TRUE), main=NULL, las=1) 
+ 
+#perform the significance test 
+quadrat.test(xhomicide, 4, 8)
+```
+
+# Distance Based Analysis with Monte Carlo Assessment
+
+```{r}
+
 ```
